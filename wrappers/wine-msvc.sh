@@ -18,9 +18,24 @@ MSVCTRICKS_EXE="$(dirname $0)/../msvctricks.exe"
 EXE=$1
 shift
 
-ARGS=()
-for a; do
-	path=
+export TEMP_RSP_DIR=$(mktemp -d)
+tmpfile_cleanup() {
+	rm -rf "$TEMP_RSP_DIR"
+}
+trap tmpfile_cleanup EXIT
+
+parse_args_string() {
+	readarray -t "$1" < <( printf "%s" "$2"|xargs -n 1 printf "%s\n" )
+}
+
+process_argument() {
+	local path=
+	local a="$1"
+	local quote="${2:-0}"
+	local quote_type="\""
+	if [[ "$a" == *\"* ]]; then
+		quote_type="'"
+	fi
 	case "$a" in
 	[-/][A-Za-z]/*)
 		path=${a#??}
@@ -41,6 +56,30 @@ for a; do
 		path=${a#*:}
 		# Rewrite options like -MANIFESTINPUT:/absolute/path into -MANIFESTINPUT:z:/absolute/path.
 		;;
+	@*)
+		# Rewrite response files like @"/absolute/path" into z:/absolute/path.
+		# Also recursively process the arguments in the response file,
+		# creating a temporary file to not interfere with the original.
+		local response_file=${a#@}
+		response_file=${response_file#\"}
+		response_file=${response_file%\"}
+		if [ -f "$response_file" ]; then
+			local response_file_contents="$(cat "$response_file")"
+
+			local response_file_args=()
+			parse_args_string response_file_args "$response_file_contents"
+
+			response_file_processed_args=()
+			for arg in "${response_file_args[@]}"; do
+				response_file_processed_args+=("$(process_argument "$arg" 1)")
+			done
+
+			local temp_response_file="$TEMP_RSP_DIR/$(basename "$response_file").$(sha256sum <<< "$response_file" | cut -d' ' -f1)"
+			echo "${response_file_processed_args[@]}" > "$temp_response_file"
+
+			a="@z:$temp_response_file"
+		fi
+		;;
 	/*)
 		# Rewrite options like /absolute/path into z:/absolute/path.
 		# This is essential for disambiguating e.g. /home/user/file from the
@@ -51,10 +90,24 @@ for a; do
 		;;
 	esac
 	if [ -n "$path" ] && [ -d "$(dirname "$path")" ] && [ "$(dirname "$path")" != "/" ]; then
-		opt=${a%$path}
-		a=${opt}z:$path
+		local opt=${a%$path}
+		if [ "$quote" -eq 1 ]; then
+			echo "${opt}${quote_type}z:$path${quote_type}"
+		else
+			echo "${opt}z:$path"
+		fi
+	else
+		if [ "$quote" -eq 1 ]; then
+			echo "${quote_type}$a${quote_type}"
+		else
+			echo "$a"
+		fi
 	fi
-	ARGS+=("$a")
+}
+
+ARGS=()
+for a; do
+	ARGS+=("$(process_argument "$a")")
 done
 
 WINE=$(command -v wine64 || command -v wine || false)
@@ -83,6 +136,13 @@ else
 	trap cleanup EXIT
 
 	cleanup && mkfifo $WINE_MSVC_STDOUT $WINE_MSVC_STDERR || exit 1
+
+	cleanup_all() {
+		cleanup
+		tmpfile_cleanup
+	}
+
+	trap cleanup_all EXIT
 
 	"$WINE" "$MSVCTRICKS_EXE" "$EXE" "${ARGS[@]}" &>/dev/null &
 	pid=$!
