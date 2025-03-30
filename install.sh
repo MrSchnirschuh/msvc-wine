@@ -195,17 +195,29 @@ for arch in x86 x64 arm arm64; do
 done
 rm msvcenv.sh
 
+build_tool() {
+    local tool="$1"
+    local src="$2"
+    local dest="$3"
+    if [ -f "$src" ]; then
+        echo "Build $tool ..."
+        "$DEST/bin/$host/cl" /EHsc /O2 "$src"
+        if [ $? -eq 0 ]; then
+            mv "${tool}.exe" "$dest/"
+            rm "${tool}.obj"
+            echo "Build $tool done."
+        else
+            echo "Build $tool failed."
+        fi
+    else
+        echo "Source file for $tool not found: $src"
+    fi
+}
+
 if [ -d "$DEST/bin/$host" ]; then
     if WINE="$(command -v wine64 || command -v wine)"; then
         WINEDEBUG=-all "${WINE}" wineboot &>/dev/null
-        echo "Build msvctricks ..."
-        "$DEST/bin/$host/cl" /EHsc /O2 "$ORIG/msvctricks.cpp"
-        if [ $? -eq 0 ]; then
-            mv msvctricks.exe bin/
-            rm msvctricks.obj
-            echo "Build msvctricks done."
-        else
-            echo "Build msvctricks failed."
-        fi
+        build_tool msvctricks "$ORIG/msvctricks.cpp" bin
+        build_tool process_sourcedependencies "$ORIG/process_sourcedependencies.cpp" bin
     fi
 fi

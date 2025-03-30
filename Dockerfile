@@ -12,7 +12,7 @@ RUN $(command -v wine64 || command -v wine || false) wineboot --init && \
 
 WORKDIR /opt/msvc
 
-COPY lowercase fixinclude install.sh vsdownload.py msvctricks.cpp ./
+COPY lowercase fixinclude install.sh vsdownload.py msvctricks.cpp process_sourcedependencies.cpp ./
 COPY wrappers/* ./wrappers/
 
 RUN PYTHONUNBUFFERED=1 ./vsdownload.py --accept-license --dest /opt/msvc && \

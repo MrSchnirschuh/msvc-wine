@@ -32,21 +32,63 @@ ec=$?
 [ $ec -ne 0 ] && exit $ec
 
 # Postprocess
-for a in "$@"; do
-    case $a in
-        [-/]P) arg_P=$a ;;
-        [-/]Fi*) arg_Fi=${a:3} ;;
-    esac
-done
+process_arguments() {
+	local args=()
+	local a
+	for a in "$@"; do
+		local path=
+		case "$a" in
+			[-/]P) arg_P=$a ;;
+			[-/]Fi*) arg_Fi=${a:3} ;;
+			[-/]sourceDependencies)
+				next_sourceDependencies=1
+				;;
+			@*)
+				local response_file=${a#@}
+				response_file=${response_file#\"}
+				response_file=${response_file%\"}
+				if [ -f "$response_file" ]; then
+					process_arguments $(cat "$response_file")
+				fi
+				;;
+			*)
+				if [ -n "$next_sourceDependencies" ]; then
+					arg_sourceDependencies=$a
+					arg_sourceDependencies=${arg_sourceDependencies#\"}
+					arg_sourceDependencies=${arg_sourceDependencies%\"}
+					next_sourceDependencies=
+				fi
+				;;
+			esac
+	done
+}
+
+process_arguments $@
 
 # Unixify paths for /P
 if [ -n "$arg_P" ] && [ -f "$arg_Fi" ]; then
-    if sed --help 2>&1 | grep '\-i extension' >/dev/null; then
-        inplace=(-i '') # BSD sed
-    else
-        inplace=(-i)    # GNU sed
-    fi
-    sed "${inplace[@]}" -E 's/\r//;'"$unixify_line" "$arg_Fi"
+	if sed --help 2>&1 | grep '\-i extension' >/dev/null; then
+		inplace=(-i '') # BSD sed
+	else
+		inplace=(-i)    # GNU sed
+	fi
+	sed "${inplace[@]}" -E 's/\r//;'"$unixify_line" "$arg_Fi"
+fi
+
+# Unixify paths for /sourceDependencies
+if [ -n "$arg_sourceDependencies" ]; then
+	# Use a custom program instead of winepath+sed for better performance and avoiding argument count limits.
+	PROCESS_SOURCEDEPENDENCIES_EXE="$(dirname $0)/../process_sourcedependencies.exe"
+	if [ -f "$PROCESS_SOURCEDEPENDENCIES_EXE" ]; then
+		WINEDEBUG=${WINEDEBUG:-"-all"} wine "$PROCESS_SOURCEDEPENDENCIES_EXE" "$arg_sourceDependencies"
+	fi
+
+	if sed --help 2>&1 | grep '\-i extension' >/dev/null; then
+		inplace=(-i '') # BSD sed
+	else
+		inplace=(-i)    # GNU sed
+	fi
+	sed "${inplace[@]}" -E 's/\r//' "$arg_sourceDependencies"
 fi
 
 exit $ec
