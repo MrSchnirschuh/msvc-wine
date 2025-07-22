@@ -47,10 +47,17 @@ process_argument() {
 		# they have been specified as -Iz:/absolute/path.
 		;;
 	[-/][A-Za-z][A-Za-z]/*)
-		path=${a#???}
-		# Rewrite options like -Fo/absolute/path into -Foz:/absolute/path.
-		# This doesn't seem to be strictly needed for any known case at the moment, but
-		# might have been needed with some version of MSVC or Wine earlier.
+		case "$a" in
+		[-/]Yc/*)
+			# /Yc must match the #include directive in the source file, so we should not rewrite it. 
+			;;
+		*)
+			path=${a#???}
+			# Rewrite options like -Fo/absolute/path into -Foz:/absolute/path.
+			# This doesn't seem to be strictly needed for any known case at the moment, but
+			# might have been needed with some version of MSVC or Wine earlier.
+			;;
+		esac
 		;;
 	[-/][A-Za-z][A-Za-z][A-Za-z]*:/*)
 		path=${a#*:}
