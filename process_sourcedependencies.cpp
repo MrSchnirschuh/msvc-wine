@@ -63,7 +63,7 @@ std::string convertPath(std::string ntpath)
     return result;
 }
 
-std::regex json_path_regex("\"z:\\\\[^\"]*\"");
+std::regex json_path_regex("\"[abd-zABD-Z]:\\\\[^\"]*\"");
 
 int __cdecl wmain(int argc, WCHAR *argv[])
 {
