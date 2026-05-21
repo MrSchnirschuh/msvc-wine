@@ -783,6 +783,7 @@ def moveVCSDK(unpack, dest):
         # Environment variable VS170COMNTOOLS points to this directory, and some
         # tools use it to locate VS installation root and MSVC toolchains.
         os.path.join("Common7", "Tools"),
+        os.path.join("Common7", "IDE", "Automation"),
     ]
     for dir in filter(None, components):
         mergeTrees(os.path.join(unpack, dir), os.path.join(dest, dir))
