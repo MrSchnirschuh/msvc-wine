@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+
+# Build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.exp
+*.ilk
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.user
+*.vs/
+
+# Test artifacts
+test/*.exe
+test/*.o
+
+# Temp files
+/tmp/
+*.tmp
+*.log
+
+# WINE artifacts
+wine/
+msvc/
