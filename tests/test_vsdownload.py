@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import hashlib
+import zipfile
 
 import pytest
 
@@ -589,3 +590,167 @@ class TestMoveVCSDK:
             assert os.path.isdir(os.path.join(dest, "VC"))
             assert os.path.isdir(os.path.join(dest, "Windows Kits"))
             assert os.path.isdir(os.path.join(dest, "Common7", "Tools"))
+
+
+class TestUnzipFiltered:
+    def test_simple_extract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            zip_path = os.path.join(tmp, "test.zip")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(dest)
+            with zipfile.ZipFile(zip_path, "w") as z:
+                z.writestr("hello.txt", "world")
+                z.writestr("sub/deep/file.txt", "nested")
+            with zipfile.ZipFile(zip_path, "r") as z:
+                vs.unzipFiltered(z, dest)
+            assert os.path.isfile(os.path.join(dest, "hello.txt"))
+            assert open(os.path.join(dest, "hello.txt")).read() == "world"
+            assert os.path.isfile(os.path.join(dest, "sub", "deep", "file.txt"))
+
+    def test_url_encoded_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            zip_path = os.path.join(tmp, "test.zip")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(dest)
+            with zipfile.ZipFile(zip_path, "w") as z:
+                z.writestr("file%20name.txt", "spaces")
+            with zipfile.ZipFile(zip_path, "r") as z:
+                vs.unzipFiltered(z, dest)
+            assert os.path.isfile(os.path.join(dest, "file name.txt"))
+
+    def test_dir_structure_preserved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            zip_path = os.path.join(tmp, "test.zip")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(dest)
+            with zipfile.ZipFile(zip_path, "w") as z:
+                z.writestr("a/b/c/d.txt", "deeply")
+                z.writestr("a/b/e.txt", "shallow")
+            with zipfile.ZipFile(zip_path, "r") as z:
+                vs.unzipFiltered(z, dest)
+            assert os.path.isfile(os.path.join(dest, "a", "b", "c", "d.txt"))
+            assert os.path.isfile(os.path.join(dest, "a", "b", "e.txt"))
+
+
+class TestUnpackVsix:
+    def test_basic_vsix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vsix_path = os.path.join(tmp, "test.vsix")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(dest)
+            with zipfile.ZipFile(vsix_path, "w") as z:
+                z.writestr("extension.vsixmanifest", "<xml/>")
+                z.writestr("[Content_Types].xml", "<xml/>")
+            listing = os.path.join(dest, "listing.txt")
+            vs.unpackVsix(vsix_path, dest, listing)
+            # Files extracted to temp, then if no Contents/ or $MSBuild/ dirs, temp is cleaned
+            assert not os.path.isdir(os.path.join(dest, "vsix"))
+            # Listing file written
+            assert os.path.isfile(listing)
+            content = open(listing).read()
+            assert "extension.vsixmanifest" in content
+            assert "[Content_Types].xml" in content
+
+    def test_vsix_with_contents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vsix_path = os.path.join(tmp, "test.vsix")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(dest)
+            # Create a VSIX with Contents/ directory that should be merged to root
+            with zipfile.ZipFile(vsix_path, "w") as z:
+                z.writestr("Contents/", "")
+                z.writestr("Contents/SubDir/file.dll", "binary")
+            listing = os.path.join(dest, "listing.txt")
+            vs.unpackVsix(vsix_path, dest, listing)
+            # Contents/SubDir/file.dll should be merged to dest/SubDir/file.dll
+            assert os.path.isfile(os.path.join(dest, "SubDir", "file.dll"))
+            # Temp cleaned
+            assert not os.path.isdir(os.path.join(dest, "vsix"))
+
+    def test_vsix_with_msbuild(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vsix_path = os.path.join(tmp, "test.vsix")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(dest)
+            with zipfile.ZipFile(vsix_path, "w") as z:
+                z.writestr("$MSBuild/", "")
+                z.writestr("$MSBuild/Tasks/bin/task.dll", "msbuild task")
+            listing = os.path.join(dest, "listing.txt")
+            vs.unpackVsix(vsix_path, dest, listing)
+            # $MSBuild contents should go to dest/MSBuild/
+            assert os.path.isfile(os.path.join(dest, "MSBuild", "Tasks", "bin", "task.dll"))
+            assert not os.path.isdir(os.path.join(dest, "vsix"))
+
+
+class TestUnpackWin10SDK:
+    def test_creates_program_files_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "cache")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(src)
+            os.makedirs(dest)
+            payloads = [{"fileName": "sdksetup.msi", "size": 1000}]
+            vs.unpackWin10SDK(src, payloads, dest)
+            # Symlink Program Files -> . should exist
+            pf = os.path.join(dest, "Program Files")
+            assert os.path.islink(pf)
+            assert os.readlink(pf) == "."
+
+    def test_skips_symlink_if_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "cache")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(src)
+            os.makedirs(dest)
+            # Create Program Files as real dir first
+            os.makedirs(os.path.join(dest, "Program Files"))
+            payloads = [{"fileName": "sdksetup.msi", "size": 1000}]
+            vs.unpackWin10SDK(src, payloads, dest)
+            pf = os.path.join(dest, "Program Files")
+            assert os.path.isdir(pf)
+            assert not os.path.islink(pf)
+
+    def test_skips_non_msi_payloads(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "cache")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(src)
+            os.makedirs(dest)
+            payloads = [
+                {"fileName": "sdksetup.msi", "size": 1000},
+                {"fileName": "cab1.cab", "size": 500},
+            ]
+            vs.unpackWin10SDK(src, payloads, dest)
+            # Should only have tried to extract the .msi (fail gracefully
+            # because sdksetup.msi doesn't exist in src, no cab attempt)
+            pf = os.path.join(dest, "Program Files")
+            assert os.path.islink(pf)
+
+    def test_creates_listing_file_on_msi_extract(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "cache")
+            dest = os.path.join(tmp, "out")
+            os.makedirs(src)
+            os.makedirs(dest)
+            # Create a dummy .msi file so check_call runs
+            msi_path = os.path.join(src, "sdksetup.msi")
+            open(msi_path, "w").close()
+            payloads = [{"fileName": "sdksetup.msi", "size": 1000}]
+            # Mock subprocess.check_call to avoid actually running msiextract
+            calls = []
+            monkeypatch.setattr(
+                vs.subprocess,
+                "check_call",
+                lambda cmd, stdout: calls.append((cmd, stdout.name)),
+            )
+            vs.unpackWin10SDK(src, payloads, dest)
+            # Listing file should exist
+            listing = os.path.join(dest, "WinSDK-sdksetup.msi-listing.txt")
+            assert os.path.isfile(listing)
+            # check_call was called with msiextract command
+            assert len(calls) == 1
+            cmd, log_path = calls[0]
+            assert cmd[0] == "msiextract"
+            assert cmd[1] == "-C"
+            assert cmd[2] == dest
+            assert cmd[3] == msi_path
