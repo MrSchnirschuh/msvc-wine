@@ -41,3 +41,6 @@ test/*.o
 # WINE artifacts
 wine/
 msvc/
+
+# graphify persistent knowledge graph output
+/graphify-out/
