@@ -1,6 +1,5 @@
 """Test fixtures for vsdownload.py tests."""
 
-import json
 import os
 import sys
 
@@ -9,7 +8,6 @@ import pytest
 # Add parent dir so we can import vsdownload
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import vsdownload as vs
 
 
 @pytest.fixture

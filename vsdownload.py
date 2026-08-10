@@ -18,9 +18,9 @@ import argparse
 import functools
 import glob
 import hashlib
-import os
-import multiprocessing.pool
 import json
+import multiprocessing.pool
+import os
 import platform
 import re
 import shutil
@@ -31,6 +31,7 @@ import tempfile
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
+
 
 def getArgsParser():
     class OptionalBoolean(argparse.Action):
@@ -315,7 +316,7 @@ def getPackages(manifest, arch):
     packages = {}
     for p in manifest["packages"]:
         id = p["id"].lower()
-        if not id in packages:
+        if id not in packages:
             packages[id] = []
         packages[id].append(p)
     for key in packages:
@@ -328,9 +329,7 @@ def listPackageType(packages, type):
     ids = []
     for key in packages:
         p = packages[key][0]
-        if type == None:
-            ids.append(p["id"])
-        elif "type" in p and p["type"].lower() == type:
+        if type == None or "type" in p and p["type"].lower() == type:
             ids.append(p["id"])
     for id in sorted(ids):
         print(id)
@@ -339,7 +338,7 @@ def findPackage(packages, id, constraints={}, warn=True):
     origid = id
     id = id.lower()
     candidates = None
-    if not id in packages:
+    if id not in packages:
         if warn:
             print("WARNING: %s not found" % (origid))
         return None
@@ -546,7 +545,7 @@ def downloadPackages(selected, cache, allowHashMismatch = False):
     tasks = []
     makedirs(cache)
     for p in selected:
-        if not "payloads" in p:
+        if "payloads" not in p:
             continue
         dir = os.path.join(cache, getPackageKey(p))
         makedirs(dir)
@@ -633,8 +632,7 @@ def unpackVsix(file, dest, listing):
     with zipfile.ZipFile(file, "r") as zip:
         unzipFiltered(zip, temp)
         with open(listing, "w") as f:
-            for n in zip.namelist():
-                f.write(n + "\n")
+            f.writelines(n + "\n" for n in zip.namelist())
     contents = os.path.join(temp, "Contents")
     if os.access(contents, os.F_OK):
         mergeTrees(contents, dest)
@@ -698,18 +696,18 @@ def unpackWin10WDK(src, dest):
     kitsPath = os.path.join(dest, "Program Files", "Windows Kits", "10")
     brokenBuildDir = os.path.join(kitsPath, "Build")
     for buildDir in glob.glob(kitsPath + "/build/10.*/"):
-        wdkVersion = buildDir.split("/")[-2];
-        print("Merging WDK 'Build' and 'build' directories into version", wdkVersion);
+        wdkVersion = buildDir.split("/")[-2]
+        print("Merging WDK 'Build' and 'build' directories into version", wdkVersion)
         mergeTrees(brokenBuildDir, buildDir)
     shutil.rmtree(brokenBuildDir)
 
     # Move the WDK .props files into a versioned directory.
-    propsPath = os.path.join(kitsPath, "DesignTime", "CommonConfiguration", "Neutral", "WDK");
+    propsPath = os.path.join(kitsPath, "DesignTime", "CommonConfiguration", "Neutral", "WDK")
     versionedPath = os.path.join(propsPath, wdkVersion)
     makedirs(versionedPath)
     for props in glob.glob(propsPath + "/*.props"):
         filename = os.path.basename(props)
-        print("Moving", filename, "into version", wdkVersion);
+        print("Moving", filename, "into version", wdkVersion)
         shutil.move(props, os.path.join(versionedPath, filename))
 
 def extractPackages(selected, cache, dest):
