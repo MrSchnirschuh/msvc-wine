@@ -1,9 +1,9 @@
 """Tests for vsdownload.py — pure functions tested without network access."""
 
+import hashlib
 import os
 import sys
 import tempfile
-import hashlib
 import zipfile
 
 import pytest
@@ -434,9 +434,9 @@ class TestAggregateDepends:
         a.include_optional = False
         a.skip_recommended = False
         included = {}
-        # Add same package twice
-        result1 = vs.aggregateDepends(sample_packages, included,
-                                      "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
+        # Add same package twice; first call populates included, second sees it already there.
+        vs.aggregateDepends(sample_packages, included,
+                            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
         result2 = vs.aggregateDepends(sample_packages, included,
                                       "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
         assert len(result2) == 0  # Already included
