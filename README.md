@@ -1,3 +1,5 @@
+> **Fork note:** This fork tracks the `ue-patches` branch for using MSVC on Linux with Unreal Engine / Satisfactory modding workflows. For the original upstream project, see [mstorsjo/msvc-wine](https://github.com/mstorsjo/msvc-wine).
+
 Cross compilation with MSVC on Linux
 ====================================
 
