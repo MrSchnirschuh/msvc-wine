@@ -9,7 +9,6 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
-
 @pytest.fixture
 def sample_packages():
     """A minimal set of packages for testing dependency resolution."""
@@ -282,8 +281,10 @@ def sample_manifest(sample_packages):
 @pytest.fixture
 def args_defaults():
     """Default args object for testing."""
+
     class Args:
         pass
+
     a = Args()
     a.manifest = None
     a.major = 17
@@ -314,5 +315,3 @@ def args_defaults():
     a.with_wdk_installers = None
     a.save_manifest = None
     return a
-
-

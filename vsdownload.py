@@ -35,11 +35,7 @@ import zipfile
 
 def getArgsParser():
     class OptionalBoolean(argparse.Action):
-        def __init__(self,
-                    option_strings,
-                    dest,
-                    default=None,
-                    help=None):
+        def __init__(self, option_strings, dest, default=None, help=None):
 
             if default is not None:
                 default_string = "yes" if default else "no"
@@ -51,46 +47,112 @@ def getArgsParser():
             super().__init__(
                 option_strings=option_strings,
                 dest=dest,
-                nargs='?',
+                nargs="?",
                 default=default,
                 choices=["yes", "no"],
                 help=help,
-                metavar="yes|no")
+                metavar="yes|no",
+            )
 
         def __call__(self, parser, namespace, values, option_string=None):
             setattr(namespace, self.dest, values != "no")
 
-    parser = argparse.ArgumentParser(description = "Download and install Visual Studio")
+    parser = argparse.ArgumentParser(description="Download and install Visual Studio")
     parser.add_argument("--manifest", metavar="manifest", help="A predownloaded manifest file")
-    parser.add_argument("--save-manifest", const=True, action="store_const", help="Store the downloaded manifest to a file")
+    parser.add_argument(
+        "--save-manifest", const=True, action="store_const", help="Store the downloaded manifest to a file"
+    )
     parser.add_argument("--major", default=17, metavar="version", help="The major version to download (defaults to 17)")
-    parser.add_argument("--preview", dest="type", default="release", const="pre", action="store_const", help="Download the preview version instead of the release version")
+    parser.add_argument(
+        "--preview",
+        dest="type",
+        default="release",
+        const="pre",
+        action="store_const",
+        help="Download the preview version instead of the release version",
+    )
     parser.add_argument("--channel", dest="type", help="Use a historical manifest instead of the release version")
     parser.add_argument("--cache", metavar="dir", help="Directory to use as a persistent cache for downloaded files")
     parser.add_argument("--dest", metavar="dir", help="Directory to install into")
-    parser.add_argument("package", metavar="package", help="Package to install. If omitted, installs the default command line tools.", nargs="*")
+    parser.add_argument(
+        "package",
+        metavar="package",
+        help="Package to install. If omitted, installs the default command line tools.",
+        nargs="*",
+    )
     parser.add_argument("--ignore", metavar="component", help="Package to skip", action="append")
-    parser.add_argument("--accept-license", const=True, action="store_const", help="Don't prompt for accepting the license")
+    parser.add_argument(
+        "--accept-license", const=True, action="store_const", help="Don't prompt for accepting the license"
+    )
     parser.add_argument("--print-version", const=True, action="store_const", help="Stop after fetching the manifest")
     parser.add_argument("--list-workloads", const=True, action="store_const", help="List high level workloads")
     parser.add_argument("--list-components", const=True, action="store_const", help="List available components")
-    parser.add_argument("--list-packages", const=True, action="store_const", help="List all individual packages, regardless of type")
-    parser.add_argument("--include-optional", const=True, action="store_const", help="Include all optional dependencies")
-    parser.add_argument("--skip-recommended", const=True, action="store_const", help="Don't include recommended dependencies")
-    parser.add_argument("--print-deps-tree", const=True, action="store_const", help="Print a tree of resolved dependencies for the given selection")
-    parser.add_argument("--print-reverse-deps", const=True, action="store_const", help="Print a tree of packages that depend on the given selection")
-    parser.add_argument("--print-selection", const=True, action="store_const", help="Print a list of the individual packages that are selected to be installed")
-    parser.add_argument("--only-download", const=True, action="store_const", help="Stop after downloading package files")
-    parser.add_argument("--only-unpack", const=True, action="store_const", help="Unpack the selected packages and keep all files, in the layout they are unpacked, don't restructure and prune files other than what's needed for MSVC CLI tools")
-    parser.add_argument("--keep-unpack", const=True, action="store_const", help="Keep the unpacked files that aren't otherwise selected as needed output")
+    parser.add_argument(
+        "--list-packages", const=True, action="store_const", help="List all individual packages, regardless of type"
+    )
+    parser.add_argument(
+        "--include-optional", const=True, action="store_const", help="Include all optional dependencies"
+    )
+    parser.add_argument(
+        "--skip-recommended", const=True, action="store_const", help="Don't include recommended dependencies"
+    )
+    parser.add_argument(
+        "--print-deps-tree",
+        const=True,
+        action="store_const",
+        help="Print a tree of resolved dependencies for the given selection",
+    )
+    parser.add_argument(
+        "--print-reverse-deps",
+        const=True,
+        action="store_const",
+        help="Print a tree of packages that depend on the given selection",
+    )
+    parser.add_argument(
+        "--print-selection",
+        const=True,
+        action="store_const",
+        help="Print a list of the individual packages that are selected to be installed",
+    )
+    parser.add_argument(
+        "--only-download", const=True, action="store_const", help="Stop after downloading package files"
+    )
+    parser.add_argument(
+        "--only-unpack",
+        const=True,
+        action="store_const",
+        help="Unpack the selected packages and keep all files, in the layout they are unpacked, don't restructure and prune files other than what's needed for MSVC CLI tools",
+    )
+    parser.add_argument(
+        "--keep-unpack",
+        const=True,
+        action="store_const",
+        help="Keep the unpacked files that aren't otherwise selected as needed output",
+    )
     parser.add_argument("--msvc-version", metavar="version", help="Install a specific MSVC toolchain version")
     parser.add_argument("--sdk-version", metavar="version", help="Install a specific Windows SDK version")
-    parser.add_argument("--architecture", metavar="arch", choices=["host", "x86", "x64", "arm", "arm64"], help="Target architectures to include (defaults to all)", nargs="+")
-    parser.add_argument("--with-wdk-installers", metavar="dir", help="Install Windows Driver Kit using the provided MSI installers")
-    parser.add_argument("--host-arch", metavar="arch", choices=["x86", "x64", "arm64"], help="Specify the host architecture of packages to install")
-    parser.add_argument("--only-host", default=True, action=OptionalBoolean, help="Only download packages that match host arch")
+    parser.add_argument(
+        "--architecture",
+        metavar="arch",
+        choices=["host", "x86", "x64", "arm", "arm64"],
+        help="Target architectures to include (defaults to all)",
+        nargs="+",
+    )
+    parser.add_argument(
+        "--with-wdk-installers", metavar="dir", help="Install Windows Driver Kit using the provided MSI installers"
+    )
+    parser.add_argument(
+        "--host-arch",
+        metavar="arch",
+        choices=["x86", "x64", "arm64"],
+        help="Specify the host architecture of packages to install",
+    )
+    parser.add_argument(
+        "--only-host", default=True, action=OptionalBoolean, help="Only download packages that match host arch"
+    )
     parser.add_argument("--skip-patch", action="store_true", help="Don't patch downloaded packages")
     return parser
+
 
 def setPackageSelectionMSVC16(args, packages, userversion, sdk, toolversion, defaultPackages):
     if findPackage(packages, "Microsoft.VisualStudio.Component.VC." + toolversion + ".x86.x64", warn=False):
@@ -111,8 +173,13 @@ def setPackageSelectionMSVC16(args, packages, userversion, sdk, toolversion, def
         # Options for toolchains for specific versions. The latest version in
         # each manifest isn't available as a pinned version though, so if that
         # version is requested, try the default version.
-        print("Didn't find exact version packages for " + userversion + ", assuming this is provided by the default/latest version")
+        print(
+            "Didn't find exact version packages for "
+            + userversion
+            + ", assuming this is provided by the default/latest version"
+        )
         args.package.extend(defaultPackages)
+
 
 def setPackageSelectionMSVC15(args, packages, userversion, sdk, toolversion, defaultPackages):
     if findPackage(packages, "Microsoft.VisualStudio.Component.VC.Tools." + toolversion, warn=False):
@@ -121,8 +188,13 @@ def setPackageSelectionMSVC15(args, packages, userversion, sdk, toolversion, def
         # Options for toolchains for specific versions. The latest version in
         # each manifest isn't available as a pinned version though, so if that
         # version is requested, try the default version.
-        print("Didn't find exact version packages for " + userversion + ", assuming this is provided by the default/latest version")
+        print(
+            "Didn't find exact version packages for "
+            + userversion
+            + ", assuming this is provided by the default/latest version"
+        )
         args.package.extend(defaultPackages)
+
 
 def setPackageSelection(args, packages):
     if not args.architecture:
@@ -226,7 +298,7 @@ def setPackageSelection(args, packages):
             if key.startswith("win10sdk") or key.startswith("win11sdk"):
                 base = key[0:8]
                 version = key[9:]
-                if re.match(r'\d+\.\d+\.\d+', version):
+                if re.match(r"\d+\.\d+\.\d+", version):
                     versions += [version]
                 sdkname = base + "_" + args.sdk_version
                 if key == sdkname:
@@ -244,12 +316,14 @@ def setPackageSelection(args, packages):
     if args.with_wdk_installers is not None:
         args.package.append("Component.Microsoft.Windows.DriverKit.BuildTools")
 
+
 def lowercaseIgnores(args):
     ignore = []
     if args.ignore != None:
         for i in args.ignore:
             ignore.append(i.lower())
     args.ignore = ignore
+
 
 def getManifest(args):
     if args.manifest == None:
@@ -276,16 +350,17 @@ def getManifest(args):
         if os.path.isfile(filename):
             oldfile = open(filename, "rb").read()
             if oldfile != manifestdata:
-                print("Old saved manifest in \"%s\" differs from newly downloaded one, not overwriting!" % (filename))
+                print('Old saved manifest in "%s" differs from newly downloaded one, not overwriting!' % (filename))
             else:
-                print("Old saved manifest in \"%s\" is still current" % (filename))
+                print('Old saved manifest in "%s" is still current' % (filename))
         else:
             f = open(filename, "wb")
             f.write(manifestdata)
             f.close()
-            print("Saved installer manifest to \"%s\"" % (filename))
+            print('Saved installer manifest to "%s"' % (filename))
 
     return manifest
+
 
 def prioritizePackage(arch, a, b):
     def archOrd(k, x):
@@ -312,6 +387,7 @@ def prioritizePackage(arch, a, b):
             return 1
     return 0
 
+
 def getPackages(manifest, arch):
     packages = {}
     for p in manifest["packages"]:
@@ -323,6 +399,7 @@ def getPackages(manifest, arch):
         packages[key] = sorted(packages[key], key=functools.cmp_to_key(functools.partial(prioritizePackage, arch)))
     return packages
 
+
 def listPackageType(packages, type):
     if type != None:
         type = type.lower()
@@ -333,6 +410,7 @@ def listPackageType(packages, type):
             ids.append(p["id"])
     for id in sorted(ids):
         print(id)
+
 
 def findPackage(packages, id, constraints={}, warn=True):
     origid = id
@@ -353,6 +431,7 @@ def findPackage(packages, id, constraints={}, warn=True):
         if matched:
             return a
     return candidates[0]
+
 
 def matchPackageHostArch(p, host):
     if host is None:
@@ -376,6 +455,7 @@ def matchPackageHostArch(p, host):
             return False
 
     return True
+
 
 def printDepends(packages, target, constraints, indent, args):
     chipstr = ""
@@ -409,9 +489,10 @@ def printDepends(packages, target, constraints, indent, args):
         return
     for target, constraints in p.get("dependencies", {}).items():
         if not isinstance(constraints, dict):
-            constraints = { "version": constraints }
+            constraints = {"version": constraints}
         target = constraints.get("id", target)
         printDepends(packages, target, constraints, indent + "  ", args)
+
 
 def printReverseDepends(packages, target, deptype, indent, args):
     deptypestr = ""
@@ -436,6 +517,7 @@ def printReverseDepends(packages, target, deptype, indent, args):
                     type = dep["type"]
                 printReverseDepends(packages, p["id"], type, indent + "  ", args)
 
+
 def getPackageKey(p):
     packagekey = p["id"]
     if "version" in p:
@@ -443,8 +525,9 @@ def getPackageKey(p):
     for k in ["chip", "machineArch", "productArch"]:
         v = p.get(k)
         if v is not None:
-           packagekey = packagekey + "-" + k + "." + v
+            packagekey = packagekey + "-" + k + "." + v
     return packagekey
+
 
 def aggregateDepends(packages, included, target, constraints, args):
     if target.lower() in args.ignore:
@@ -461,7 +544,7 @@ def aggregateDepends(packages, included, target, constraints, args):
     included[packagekey] = True
     for target, constraints in p.get("dependencies", {}).items():
         if not isinstance(constraints, dict):
-            constraints = { "version": constraints }
+            constraints = {"version": constraints}
         target = constraints.get("id", target)
         deptype = constraints.get("type")
         if deptype == "Optional" and not args.include_optional:
@@ -471,12 +554,14 @@ def aggregateDepends(packages, included, target, constraints, args):
         ret.extend(aggregateDepends(packages, included, target, constraints, args))
     return ret
 
+
 def getSelectedPackages(packages, args):
     ret = []
     included = {}
     for i in args.package:
         ret.extend(aggregateDepends(packages, included, i, {}, args))
     return ret
+
 
 def sumInstalledSize(l):
     sum = 0
@@ -487,6 +572,7 @@ def sumInstalledSize(l):
                 sum = sum + sizes[location]
     return sum
 
+
 def sumDownloadSize(l):
     sum = 0
     for p in l:
@@ -496,14 +582,16 @@ def sumDownloadSize(l):
                     sum = sum + payload["size"]
     return sum
 
+
 def formatSize(s):
-    if s > 900*1024*1024:
-        return "%.1f GB" % (s/(1024*1024*1024))
-    if s > 900*1024:
-        return "%.1f MB" % (s/(1024*1024))
+    if s > 900 * 1024 * 1024:
+        return "%.1f GB" % (s / (1024 * 1024 * 1024))
+    if s > 900 * 1024:
+        return "%.1f MB" % (s / (1024 * 1024))
     if s > 1024:
-        return "%.1f KB" % (s/1024)
+        return "%.1f KB" % (s / 1024)
     return "%d bytes" % (s)
+
 
 def printPackageList(l):
     for p in sorted(l, key=lambda p: p["id"]):
@@ -519,18 +607,21 @@ def printPackageList(l):
         s = s + " " + formatSize(sumInstalledSize([p]))
         print(s)
 
+
 def makedirs(dir):
     try:
         os.makedirs(dir)
     except OSError:
         pass
 
+
 def sha256File(file):
     sha256Hash = hashlib.sha256()
     with open(file, "rb") as f:
         for byteBlock in iter(lambda: f.read(4096), b""):
-                sha256Hash.update(byteBlock)
+            sha256Hash.update(byteBlock)
         return sha256Hash.hexdigest()
+
 
 def getPayloadName(payload):
     name = payload["fileName"]
@@ -540,7 +631,8 @@ def getPayloadName(payload):
         name = name.split("/")[-1]
     return name
 
-def downloadPackages(selected, cache, allowHashMismatch = False):
+
+def downloadPackages(selected, cache, allowHashMismatch=False):
     pool = multiprocessing.Pool(5)
     tasks = []
     makedirs(cache)
@@ -559,6 +651,7 @@ def downloadPackages(selected, cache, allowHashMismatch = False):
     downloaded = sum(task.get() for task in tasks)
     pool.close()
     print("Downloaded %s in total" % (formatSize(downloaded)))
+
 
 def _downloadPayload(payload, destname, fileid, allowHashMismatch):
     attempts = 5
@@ -591,6 +684,7 @@ def _downloadPayload(payload, destname, fileid, allowHashMismatch):
                 raise
             print("%s: %s" % (type(e).__name__, e), flush=True)
 
+
 def mergeTrees(src, dest):
     if not os.path.isdir(src):
         return
@@ -614,6 +708,7 @@ def mergeTrees(src, dest):
         else:
             shutil.move(srcname, destname)
 
+
 def unzipFiltered(zip, dest):
     tmp = os.path.join(dest, "extract")
     for f in zip.infolist():
@@ -625,6 +720,7 @@ def unzipFiltered(zip, dest):
         extracted = zip.extract(f, tmp)
         shutil.move(extracted, os.path.join(dest, name))
     shutil.rmtree(tmp)
+
 
 def unpackVsix(file, dest, listing):
     temp = os.path.join(dest, "vsix")
@@ -641,6 +737,7 @@ def unpackVsix(file, dest, listing):
     if os.access(msbuild, os.F_OK):
         mergeTrees(msbuild, os.path.join(dest, "MSBuild"))
     shutil.rmtree(temp)
+
 
 def unpackWin10SDK(src, payloads, dest):
     # We could try to unpack only the MSIs we need here.
@@ -659,11 +756,12 @@ def unpackWin10SDK(src, payloads, dest):
             srcfile = os.path.join(src, name)
             if sys.platform == "win32":
                 # The path to TARGETDIR need to be quoted in the case of spaces.
-                cmd = "msiexec /a \"%s\" /qn TARGETDIR=\"%s\"" % (srcfile, os.path.abspath(dest))
+                cmd = 'msiexec /a "%s" /qn TARGETDIR="%s"' % (srcfile, os.path.abspath(dest))
             else:
                 cmd = ["msiextract", "-C", dest, srcfile]
             with open(os.path.join(dest, "WinSDK-" + getPayloadName(payload) + "-listing.txt"), "w") as log:
                 subprocess.check_call(cmd, stdout=log)
+
 
 def unpackWin10WDK(src, dest):
     print("Unpacking WDK installers from", src)
@@ -710,6 +808,7 @@ def unpackWin10WDK(src, dest):
         print("Moving", filename, "into version", wdkVersion)
         shutil.move(props, os.path.join(versionedPath, filename))
 
+
 def extractPackages(selected, cache, dest):
     makedirs(dest)
     # The path name casing is not consistent across packages, or even within a single package.
@@ -723,12 +822,17 @@ def extractPackages(selected, cache, dest):
         if type == "Vsix":
             print("Unpacking " + p["id"])
             for payload in p["payloads"]:
-                unpackVsix(os.path.join(dir, getPayloadName(payload)), dest, os.path.join(dest, getPackageKey(p) + "-listing.txt"))
-        elif p["id"].startswith("Win10SDK") or p["id"].startswith("Win11SDK") or type == 'Msi':
+                unpackVsix(
+                    os.path.join(dir, getPayloadName(payload)),
+                    dest,
+                    os.path.join(dest, getPackageKey(p) + "-listing.txt"),
+                )
+        elif p["id"].startswith("Win10SDK") or p["id"].startswith("Win11SDK") or type == "Msi":
             print("Unpacking " + p["id"])
             unpackWin10SDK(dir, p["payloads"], dest)
         else:
             print("Skipping unpacking of " + p["id"] + " of type " + type)
+
 
 def patchPackages(dest):
     patches = os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches")
@@ -742,7 +846,12 @@ def patchPackages(dest):
         if op == ".patch":
             if os.access(os.path.join(dest, f), os.F_OK):
                 # Check if the patch has already been applied by attempting a reverse application; skip if already applied.
-                if subprocess.call(["git", "--work-tree=.", "apply", "--quiet", "--reverse", "--check", patch], cwd=dest) != 0:
+                if (
+                    subprocess.call(
+                        ["git", "--work-tree=.", "apply", "--quiet", "--reverse", "--check", patch], cwd=dest
+                    )
+                    != 0
+                ):
                     print("Patching " + f)
                     subprocess.check_call(["git", "--work-tree=.", "apply", patch], cwd=dest)
         elif op == ".remove":
@@ -753,6 +862,7 @@ def patchPackages(dest):
             print("Copying " + p)
             os.makedirs(os.path.dirname(os.path.join(dest, p)), exist_ok=True)
             shutil.copyfile(patch, os.path.join(dest, p))
+
 
 def copyDependentAssemblies(app):
     if not os.path.isfile(app + ".config"):
@@ -765,6 +875,7 @@ def copyDependentAssemblies(app):
         src = os.path.join(dest, href)
         if os.path.isfile(src):
             shutil.copy(src, dest)
+
 
 def moveVCSDK(unpack, dest):
     # Move some components out from the unpack directory,
@@ -785,6 +896,7 @@ def moveVCSDK(unpack, dest):
     ]
     for dir in filter(None, components):
         mergeTrees(os.path.join(unpack, dir), os.path.join(dest, dir))
+
 
 if __name__ == "__main__":
     parser = getArgsParser()
@@ -818,9 +930,13 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if not args.accept_license:
-        response = input("Do you accept the license at " + findPackage(packages, "Microsoft.VisualStudio.Product.BuildTools")["localizedResources"][0]["license"] + " (yes/no)? ")
+        response = input(
+            "Do you accept the license at "
+            + findPackage(packages, "Microsoft.VisualStudio.Product.BuildTools")["localizedResources"][0]["license"]
+            + " (yes/no)? "
+        )
         while response != "yes" and response != "no":
-            response = input("Do you accept the license? Answer \"yes\" or \"no\": ")
+            response = input('Do you accept the license? Answer "yes" or "no": ')
         if response == "no":
             sys.exit(0)
 
@@ -850,7 +966,10 @@ if __name__ == "__main__":
     if args.print_selection:
         printPackageList(selected)
 
-    print("Selected %d packages, for a total download size of %s, install size of %s" % (len(selected), formatSize(sumDownloadSize(selected)), formatSize(sumInstalledSize(selected))))
+    print(
+        "Selected %d packages, for a total download size of %s, install size of %s"
+        % (len(selected), formatSize(sumDownloadSize(selected)), formatSize(sumInstalledSize(selected)))
+    )
 
     if args.print_selection:
         sys.exit(0)
@@ -893,7 +1012,7 @@ if __name__ == "__main__":
             moveVCSDK(unpack, dest)
             if not args.keep_unpack:
                 shutil.rmtree(unpack)
-            if not args.skip_patch and args.major == 17: # Only apply patches to latest VS
+            if not args.skip_patch and args.major == 17:  # Only apply patches to latest VS
                 patchPackages(dest)
     finally:
         if tempcache != None:

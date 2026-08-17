@@ -50,14 +50,19 @@ class TestFindPackage:
         assert p is None
 
     def test_find_with_constraints(self, sample_packages):
-        p = vs.findPackage(sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                           constraints={"chip": "x64"})
+        p = vs.findPackage(
+            sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", constraints={"chip": "x64"}
+        )
         assert p is not None
         assert p["chip"] == "x64"
 
     def test_find_with_mismatched_constraints(self, sample_packages):
-        p = vs.findPackage(sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                           constraints={"chip": "arm64"}, warn=False)
+        p = vs.findPackage(
+            sample_packages,
+            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            constraints={"chip": "arm64"},
+            warn=False,
+        )
         # Falls back to first candidate when constraints don't match
         assert p is not None
 
@@ -235,6 +240,7 @@ class TestLowercaseIgnores:
     def test_none_ignore(self):
         class Args:
             pass
+
         a = Args()
         a.ignore = None
         vs.lowercaseIgnores(a)
@@ -243,6 +249,7 @@ class TestLowercaseIgnores:
     def test_lowercases(self):
         class Args:
             pass
+
         a = Args()
         a.ignore = ["MICROSOFT.VISUALSTUDIO", "Test.Package"]
         vs.lowercaseIgnores(a)
@@ -251,6 +258,7 @@ class TestLowercaseIgnores:
     def test_empty_list(self):
         class Args:
             pass
+
         a = Args()
         a.ignore = []
         vs.lowercaseIgnores(a)
@@ -405,14 +413,16 @@ class TestAggregateDepends:
     def test_simple_dependency(self, sample_packages, args_defaults):
         included = {}
         args_defaults.only_host = False
-        result = vs.aggregateDepends(sample_packages, included,
-                                     "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, args_defaults)
+        result = vs.aggregateDepends(
+            sample_packages, included, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, args_defaults
+        )
         assert len(result) == 1
         assert result[0]["id"] == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
 
     def test_ignored_package(self, sample_packages):
         class Args:
             pass
+
         a = Args()
         a.ignore = ["microsoft.visualstudio.component.vc.tools.x86.x64"]
         a.only_host = False
@@ -420,13 +430,15 @@ class TestAggregateDepends:
         a.include_optional = False
         a.skip_recommended = False
         included = {}
-        result = vs.aggregateDepends(sample_packages, included,
-                                     "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
+        result = vs.aggregateDepends(
+            sample_packages, included, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a
+        )
         assert result == []
 
     def test_deduplication(self, sample_packages):
         class Args:
             pass
+
         a = Args()
         a.ignore = []
         a.only_host = False
@@ -435,15 +447,16 @@ class TestAggregateDepends:
         a.skip_recommended = False
         included = {}
         # Add same package twice; first call populates included, second sees it already there.
-        vs.aggregateDepends(sample_packages, included,
-                            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
-        result2 = vs.aggregateDepends(sample_packages, included,
-                                      "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
+        vs.aggregateDepends(sample_packages, included, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a)
+        result2 = vs.aggregateDepends(
+            sample_packages, included, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", {}, a
+        )
         assert len(result2) == 0  # Already included
 
     def test_workload_with_deps(self, sample_packages):
         class Args:
             pass
+
         a = Args()
         a.ignore = []
         a.only_host = False
@@ -451,8 +464,7 @@ class TestAggregateDepends:
         a.include_optional = False
         a.skip_recommended = False
         included = {}
-        result = vs.aggregateDepends(sample_packages, included,
-                                     "Microsoft.VisualStudio.Workload.VCTools", {}, a)
+        result = vs.aggregateDepends(sample_packages, included, "Microsoft.VisualStudio.Workload.VCTools", {}, a)
         # Should include workload + its deps (but not Recommended ones when skip_recommended=False)
         ids = [p["id"] for p in result]
         assert "Microsoft.VisualStudio.Workload.VCTools" in ids
@@ -494,12 +506,16 @@ class TestPrintDepends:
 
 class TestPrintReverseDepends:
     def test_prints_reverse_deps(self, sample_packages, args_defaults, capsys):
-        vs.printReverseDepends(sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "", "", args_defaults)
+        vs.printReverseDepends(
+            sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "", "", args_defaults
+        )
         captured = capsys.readouterr()
         assert "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" in captured.out
 
     def test_finds_dependents(self, sample_packages, args_defaults, capsys):
-        vs.printReverseDepends(sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "", "", args_defaults)
+        vs.printReverseDepends(
+            sample_packages, "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "", "", args_defaults
+        )
         captured = capsys.readouterr()
         assert "Microsoft.VisualStudio.Workload.VCTools" in captured.out
 
@@ -559,7 +575,7 @@ class TestCopyDependentAssemblies:
             open(app, "w").close()
             config = app + ".config"
             with open(config, "w") as f:
-                f.write('''<?xml version="1.0"?>
+                f.write("""<?xml version="1.0"?>
 <configuration>
   <runtime>
     <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
@@ -568,7 +584,7 @@ class TestCopyDependentAssemblies:
       </dependentAssembly>
     </assemblyBinding>
   </runtime>
-</configuration>''')
+</configuration>""")
             subdir = os.path.join(tmp, "sub")
             os.makedirs(subdir)
             lib = os.path.join(subdir, "lib.dll")
