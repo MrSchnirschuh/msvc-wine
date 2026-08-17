@@ -18,13 +18,13 @@ jobs:
           sudo apt-get update && sudo apt-get install wine64 python3 msitools ca-certificates ninja-build winbind meson nasm
           WINE=$(command -v wine64 || command -v wine || false)
           $WINE wineboot
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Download MSVC
         run: |
           ./vsdownload.py --accept-license --dest $(pwd)/msvc --architecture arm64
           ./install.sh $(pwd)/msvc
       - name: Checkout gas-preprocessor
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ffmpeg/gas-preprocessor
           ref: 9309c67acb535ca6248f092e96131d8eb07eefc1
@@ -67,7 +67,7 @@ jobs:
           cp ../../msvc/vc/Redist/MSVC/1*/arm64/*.CRT/vcruntime*.dll ../../install/bin
       # The build output from MSVC actually is redistributable, even if the
       # toolchain itself isn't.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dav1d
           path: |
@@ -82,13 +82,13 @@ jobs:
           sudo apt-get update && sudo apt-get install wine64 python3 msitools ca-certificates winbind nasm
           WINE=$(command -v wine64 || command -v wine || false)
           $WINE wineboot
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Download MSVC
         run: |
           ./vsdownload.py --accept-license --dest $(pwd)/msvc --architecture arm64
           ./install.sh $(pwd)/msvc
       - name: Checkout gas-preprocessor
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ffmpeg/gas-preprocessor
           ref: 9309c67acb535ca6248f092e96131d8eb07eefc1
@@ -97,7 +97,7 @@ jobs:
         run: |
           echo $(pwd)/gas-preprocessor >> $GITHUB_PATH
       - name: Checkout ffmpeg
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ffmpeg/ffmpeg
           ref: n7.1
@@ -112,7 +112,7 @@ jobs:
           make install
       # The build output from MSVC actually is redistributable, even if the
       # toolchain itself isn't.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ffmpeg
           path: |
@@ -127,13 +127,13 @@ jobs:
           sudo apt-get update && sudo apt-get install wine64 python3 msitools ca-certificates cmake ninja-build winbind
           WINE=$(command -v wine64 || command -v wine || false)
           $WINE wineboot
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Download MSVC
         run: |
           ./vsdownload.py --accept-license --dest $(pwd)/msvc --architecture x64
           ./install.sh $(pwd)/msvc
       - name: Checkout llvm-project
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: llvm/llvm-project
           ref: llvmorg-16.0.6
@@ -163,7 +163,7 @@ jobs:
           cp ../../../msvc/vc/Redist/MSVC/1*/x64/*.CRT/vcruntime*.dll ../../../install/bin
       # The build output from MSVC actually is redistributable, even if the
       # toolchain itself isn't.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: llvm
           path: |
